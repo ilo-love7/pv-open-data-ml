@@ -25,7 +25,9 @@
 逐类 mAP50-95：no_electricity 0.72 > hot_spot 0.49 ≈ broken 0.46 ≈
 black_border 0.45 > scratch 0.24。
 
-混淆矩阵（`confusion_matrix_normalized.png`）对角线
+![混淆矩阵](confusion_matrix_normalized.png)
+
+混淆矩阵对角线
 0.94 / 0.82 / 0.99 / 0.92 / 0.99——分类本身几乎不出错；
 主要扣分在**框的定位精度**（mAP50-95），尤其是 scratch：细长目标
 对 IoU 阈值敏感，且 18% 的 broken 被误判为 scratch（视觉形态相近）。
