@@ -19,3 +19,4 @@ __pycache__/
 Thumbs.db
 run.log
 defect-detection/results/
+*.joblib

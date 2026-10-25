@@ -17,13 +17,14 @@
 
 # %%
 import os
-import re
 import numpy as np
 import pandas as pd
 import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+
+from cleaning import cap_categories, first_token, last_num
 from sklearn.ensemble import RandomForestRegressor, HistGradientBoostingRegressor
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.pipeline import Pipeline
@@ -71,20 +72,6 @@ USE_COLS = [TARGET] + NUM_COLS + CAT_COLS + ANNEAL_COLS + ["Module", "JV_measure
 
 # %%
 # ------------------------- 1. 读取与清洗 -------------------------
-def last_num(x):
-    """从 'Unknown >> 100.0' / '10 | 20' 这类多步值里取最后一个数值。"""
-    if pd.isna(x):
-        return np.nan
-    m = re.findall(r"[-+]?\d+\.?\d*", str(x))
-    return float(m[-1]) if m else np.nan
-
-
-def first_token(x, top=None):
-    """多步类别值 'Spin-coating >> CBD' 取第一段，并归并 Unknown。"""
-    if pd.isna(x):
-        return np.nan
-    s = str(x).split(">>")[0].strip()
-    return s if s and s.lower() != "unknown" else "Unknown/other"
 
 
 print("读取数据（只加载所需列）…")
@@ -110,9 +97,8 @@ df["Ref_publication_date"] = pd.to_numeric(df["Ref_publication_date"], errors="c
 cat_summary = []
 for c in CAT_COLS:
     df[c] = df[c].map(first_token)
-    top = df[c].value_counts().head(10).index
-    cat_summary.append((c, len(top)))
-    df[c] = df[c].where(df[c].isin(top), "OTHER")
+    df[c], k = cap_categories(df[c])
+    cat_summary.append((c, k))
 
 print(f"原始 {n0} 行 → 清洗后 {n1} 行（排除模块/无效PCE）")
 print(f"PCE: 中位 {df['y'].median():.2f}%  均值 {df['y'].mean():.2f}%  最大 {df['y'].max():.2f}%")
@@ -242,3 +228,28 @@ print("消融对比图已保存 fig4_importance_ablation.png")
 print("[消融] 新重要性 Top 5：")
 for k, v in imp2.sort_values(ascending=False).head(5).items():
     print(f"  {k:55s} {v:.3f}")
+
+# %%
+# ------------------------- 5. 残差按组分分布：模型在哪类材料上失准 -------------------------
+resid = pd.DataFrame({
+    "composition": X_te["Perovskite_composition_short_form"].values,
+    "resid_pct": (pred_rf - y_te.values),
+})
+groups = [g for _, g in resid.groupby("composition") if len(g) >= 30]
+labels = [g["composition"].iloc[0] for g in groups]
+fig, ax = plt.subplots(figsize=(9, 5))
+bp = ax.boxplot([g["resid_pct"] for g in groups], tick_labels=labels,
+                showfliers=False, patch_artist=True)
+ax.set_xticklabels(labels, rotation=30, ha="right", fontsize=9)
+for b in bp["boxes"]:
+    b.set_facecolor("#f5b7b1")
+ax.axhline(0, color="red", ls="--", lw=1)
+ax.set_ylabel("预测 - 实测 (PCE 百分点)")
+ax.set_title("按组分分组的预测残差（仅显示 n>=30 的组，剔除离群点）")
+fig.tight_layout()
+fig.savefig("fig5_residual_by_composition.png", dpi=150)
+plt.close(fig)
+stats = resid.groupby("composition")["resid_pct"].agg(["count", "median"])
+print("[残差分析] 按组分（中位残差，百分点）：")
+print(stats[stats["count"] >= 30].sort_values("median").to_string())
+print("残差分析图已保存 fig5_residual_by_composition.png")

@@ -1,5 +1,7 @@
 # Perovskite Open-Data ML · 钙钛矿开源数据机器学习
 
+[![CI](https://github.com/ilo-love7/pv-open-data-ml/actions/workflows/ci.yml/badge.svg)](https://github.com/ilo-love7/pv-open-data-ml/actions/workflows/ci.yml)
+
 三个围绕**光伏/钙钛矿公开数据集**的机器学习模块：表格回归、
 序列决策（贝叶斯优化）、视觉检测。全部数据来自公开渠道，
 仓库附下载脚本（内置国内镜像通道），每个模块独立可跑、结果图随仓库分发。
@@ -37,6 +39,9 @@ cd pce-regression && python download_data.py && python process_pce_regression.py
 
 # 贝叶斯优化（复用上一步数据）
 cd ../bayesian-optimization && python virtual_lab_optuna.py
+
+# 输入工艺参数 → 预测 PCE（首次运行自动训练并缓存模型）
+python ../pce-regression/predict_pce.py --T 110 --t 10 --thickness 550
 
 # 缺陷检测（~60MB 数据 + CPU 训练约 1.5 小时）
 cd ../defect-detection && python download_data.py && python train_yolo.py
