@@ -1,0 +1,27 @@
+name: CI
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install light dependencies
+        run: pip install numpy pandas pytest
+      - name: Cleaning unit tests
+        working-directory: pce-regression
+        run: python -m pytest test_cleaning.py -v
+      - name: Defect-detection inference smoke test
+        working-directory: defect-detection
+        run: |
+          pip install ultralytics
+          python predict_image.py samples/sample_infer.jpg --out /tmp/infer
+          test -d /tmp/infer/infer
+      - name: Syntax check all python files
+        run: python -m py_compile $(git ls-files '*.py')
+      # 完整回归/训练需要 85MB 数据集，不在 CI 中运行；
+      # 本地：pce-regression 先 download_data.py 再 process_pce_regression.py

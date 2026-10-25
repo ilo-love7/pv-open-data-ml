@@ -37,6 +37,9 @@ black_border 0.45 > scratch 0.24。
 | 文件 | 内容 |
 |---|---|
 | `train_yolo.py` | 数据校验 → 训练 → 验证 → 推理，# %% 单元格格式 |
+| `weights/best.pt` | 训练好的模型权重（可直接推理） |
+| `predict_image.py` | 推理 CLI |
+| `samples/` + `docs/predict_sample.jpg` | 内置样例图与推理输出 |
 | `confusion_matrix*.png` | 验证集混淆矩阵 |
 | `training_curve.png` | 损失与 mAP 训练曲线 |
 | `test_preds/`（运行后生成） | 测试图推理可视化（框+置信度） |
@@ -51,6 +54,19 @@ black_border 0.45 > scratch 0.24。
   开源没有现成带框数据集，这正是"自己标 50-100 张"的切入点。
   本项目的流水线（YOLO 格式标注 → 训练 → mAP → 部署）完全可迁移：
   拍图后用 labelimg 按 YOLO 格式标注即可换数据重训。
+
+## 推理（无需训练）
+
+训练好的权重随仓库分发（`weights/best.pt`，约 6MB），克隆后直接检测：
+
+```bash
+python predict_image.py                              # 内置样例图
+python predict_image.py path/to/panel.jpg --conf 0.5 # 自定义图像
+```
+
+样例输出（内置样例图，4 条断路串全部 0.96 置信度，CPU 推理 ~100ms/张）：
+
+![推理示例](docs/predict_sample.jpg)
 
 ## 数据下载
 
