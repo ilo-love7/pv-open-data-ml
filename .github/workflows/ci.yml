@@ -15,12 +15,16 @@ jobs:
       - name: Cleaning unit tests
         working-directory: pce-regression
         run: python -m pytest test_cleaning.py -v
-      - name: Defect-detection inference smoke test
+      - name: Defect-detection inference smoke test (skips without weights)
         working-directory: defect-detection
         run: |
+          if [ ! -f weights/best.pt ]; then
+            echo "weights/best.pt 走 Release 附件分发，不在仓库内，跳过冒烟测试"
+            exit 0
+          fi
           pip install ultralytics
           python predict_image.py samples/sample_infer.jpg --out /tmp/infer
-          test -d /tmp/infer/infer
+          test -f /tmp/infer/infer/sample_infer.jpg
       - name: Syntax check all python files
         run: python -m py_compile $(git ls-files '*.py')
       # 完整回归/训练需要 85MB 数据集，不在 CI 中运行；
